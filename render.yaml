@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: the-new-tamale-events
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install && cd client && npm install && npm run build
+    startCommand: node server/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5050
