@@ -9,14 +9,33 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { UserDashboardPage } from './pages/UserDashboardPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { InstallAppModal } from './components/InstallAppModal';
 import { EventItem } from './types';
 import { BRANDING } from './config/branding';
+import { Smartphone, X } from 'lucide-react';
 
 export const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [pageParams, setPageParams] = useState<Record<string, string>>({});
   const [selectedCity, setSelectedCity] = useState<string>('All');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
+  const [showInstallPill, setShowInstallPill] = useState<boolean>(false);
+
+  // Check if mobile and show floating install pill after 3s
+  useEffect(() => {
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true;
+    const dismissed = sessionStorage.getItem('pwa_prompt_dismissed');
+
+    if (!isStandalone && !dismissed) {
+      const timer = setTimeout(() => {
+        setShowInstallPill(true);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Sync hash routing on popstate & initial load
   useEffect(() => {
@@ -112,6 +131,7 @@ export const AppContent: React.FC = () => {
         }}
         onNavigate={navigateTo}
         activePage={currentPage}
+        onOpenInstallModal={() => setIsInstallModalOpen(true)}
       />
 
       {/* Main Page Content */}
@@ -171,6 +191,54 @@ export const AppContent: React.FC = () => {
         )}
       </main>
 
+      {/* Mobile Floating Install Pill (Bottom-left/center on mobile) */}
+      {showInstallPill && (
+        <div className="fixed bottom-5 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-40 animate-bounce-short">
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-900/95 border border-amber-500/40 shadow-2xl backdrop-blur-xl">
+            <div
+              onClick={() => setIsInstallModalOpen(true)}
+              className="flex items-center gap-3 cursor-pointer flex-1 mr-2"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-rose-500 flex items-center justify-center text-slate-950 font-bold shrink-0 shadow-md">
+                <Smartphone size={20} />
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-black text-white flex items-center gap-1.5">
+                  <span>Get the Tamale Events App</span>
+                  <span className="text-[9px] px-1 rounded bg-amber-500/20 text-amber-400 font-extrabold">NEW</span>
+                </div>
+                <div className="text-[10px] text-slate-300">Fast 1-tap download for iOS & Android</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setIsInstallModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs hover:bg-amber-300 transition-colors shadow-sm"
+              >
+                Install
+              </button>
+              <button
+                onClick={() => {
+                  setShowInstallPill(false);
+                  sessionStorage.setItem('pwa_prompt_dismissed', 'true');
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors"
+                title="Dismiss"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Download / Install App Modal */}
+      <InstallAppModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+      />
+
       {/* Footer */}
       <Footer
         onNavigate={navigateTo}
@@ -178,10 +246,12 @@ export const AppContent: React.FC = () => {
           setSelectedCity(c);
           navigateTo('events', { city: c });
         }}
+        onOpenInstallModal={() => setIsInstallModalOpen(true)}
       />
     </div>
   );
 };
+
 
 export default function App() {
   return (

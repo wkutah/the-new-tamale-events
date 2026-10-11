@@ -1,8 +1,10 @@
 node_modules/
 client/node_modules/
+client/dist/
 bin/
 *.log
 .DS_Store
 .env
 *.db-shm
 *.db-wal
+

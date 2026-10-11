@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#070b14" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+    <linearGradient id="roseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4f5a" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="#f59e0b" stroke-width="6" opacity="0.4" />
+
+  <!-- Radiance Arcs -->
+  <circle cx="256" cy="256" r="190" stroke="url(#goldGrad)" stroke-width="10" stroke-dasharray="24 16" fill="none" opacity="0.45" />
+  <circle cx="256" cy="256" r="140" stroke="url(#roseGrad)" stroke-width="8" stroke-dasharray="14 14" fill="none" opacity="0.6" />
+
+  <!-- Vertical Music & Rhythm Pulse Bars -->
+  <!-- Bar 1: Amber -->
+  <rect x="130" y="220" width="28" height="90" rx="14" fill="#f59e0b" />
+  <!-- Bar 2: Golden -->
+  <rect x="175" y="160" width="28" height="180" rx="14" fill="#fbbf24" />
+  <!-- Bar 3: White Center Beacon -->
+  <rect x="220" y="115" width="34" height="260" rx="17" fill="#ffffff" />
+  <!-- Bar 4: Vivid Rose -->
+  <rect x="270" y="145" width="34" height="220" rx="17" fill="#ff4f5a" />
+  <!-- Bar 5: Emerald -->
+  <rect x="320" y="180" width="28" height="140" rx="14" fill="#10b981" />
+  <!-- Bar 6: Purple Violet -->
+  <rect x="365" y="235" width="28" height="70" rx="14" fill="#a855f7" />
+
+  <!-- Center Core Starburst -->
+  <circle cx="237" cy="245" r="18" fill="#ffffff" />
+  <circle cx="237" cy="245" r="28" fill="#fbbf24" opacity="0.4" />
+
+  <!-- Southern/Northern Cross Mini Accent Stars -->
+  <circle cx="160" cy="110" r="8" fill="#f59e0b" />
+  <circle cx="350" cy="110" r="8" fill="#ff4f5a" />
+</svg>

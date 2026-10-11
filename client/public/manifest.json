@@ -1,0 +1,54 @@
+{
+  "name": "The New Tamale Events",
+  "short_name": "Tamale Events",
+  "description": "Discover concerts, parties, nightlife, festivals, comedy, and cultural celebrations across Northern Ghana. Powered By ALSHAREME Media.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "orientation": "portrait",
+  "categories": ["entertainment", "music", "lifestyle", "events"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Discover Events",
+      "short_name": "Events",
+      "description": "Browse upcoming events in Northern Ghana",
+      "url": "/#events",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Trending Buzz",
+      "short_name": "Trending",
+      "description": "See the hottest trending events right now",
+      "url": "/#events?sort=trending",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -1,14 +1,16 @@
 import React from 'react';
 import { Logo } from './Logo';
 import { BRANDING } from '../config/branding';
-import { MapPin, Mail, Phone, ExternalLink } from 'lucide-react';
+import { MapPin, Mail, Phone, ExternalLink, Smartphone } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (page: string, params?: Record<string, string>) => void;
   onSelectCity?: (city: string) => void;
+  onOpenInstallModal?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCity }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCity, onOpenInstallModal }) => {
+
   return (
     <footer className="w-full bg-slate-950 border-t border-slate-900 pt-16 pb-12 text-slate-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -139,11 +141,20 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCity }) => {
             <span className="font-black text-amber-400 tracking-wide">ALSHAREME Media</span>
           </div>
           <div className="flex items-center gap-4 text-slate-500">
+            <button
+              onClick={onOpenInstallModal}
+              className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold transition-colors"
+            >
+              <Smartphone size={13} />
+              <span>Download Mobile App</span>
+            </button>
+            <span>•</span>
             <button onClick={() => onNavigate('admin')} className="hover:text-slate-300 transition-colors">
               Admin Portal
             </button>
           </div>
         </div>
+
       </div>
     </footer>
   );

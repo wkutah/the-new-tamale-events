@@ -16,7 +16,8 @@ import {
   ChevronDown,
   Sparkles,
   PlusCircle,
-  Flame
+  Flame,
+  Smartphone
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -24,15 +25,18 @@ interface NavbarProps {
   onSelectCity?: (city: string) => void;
   onNavigate: (page: string, params?: Record<string, string>) => void;
   activePage: string;
+  onOpenInstallModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentCity = 'All',
   onSelectCity,
   onNavigate,
-  activePage
+  activePage,
+  onOpenInstallModal
 }) => {
   const { user, isAdmin, logout } = useAuth();
+
   const [isCityMenuOpen, setIsCityMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -150,6 +154,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Section: Auth & User Profile or Admin Shortcut */}
         <div className="hidden md:flex items-center gap-3">
+          {/* Download/Install App CTA */}
+          <button
+            onClick={onOpenInstallModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-amber-300 hover:text-white bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all shadow-sm group"
+            title="Download / Install mobile app for Android and iOS"
+          >
+            <Smartphone size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
+            <span>Install App</span>
+          </button>
+
           {/* Quick Submit CTA for organisers */}
           <button
             onClick={() => {
@@ -172,6 +186,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className="flex items-center gap-2.5 p-1.5 pl-3 rounded-full bg-slate-900/90 border border-slate-700/80 hover:border-amber-500/50 transition-all"
               >
+
                 <div className="text-left text-xs">
                   <div className="font-semibold text-white leading-tight flex items-center gap-1.5">
                     <span>{user.full_name.split(' ')[0]}</span>
@@ -296,6 +311,28 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Mobile Menu Drawer */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-b border-slate-800 bg-slate-950/95 backdrop-blur-2xl p-5 space-y-4">
+          {/* Download Mobile App Quick Action */}
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              if (onOpenInstallModal) onOpenInstallModal();
+            }}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-rose-500/10 to-amber-500/15 border border-amber-500/40 text-amber-200 text-left active:scale-[0.98] transition-transform"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <Smartphone size={18} />
+              </div>
+              <div>
+                <div className="text-xs font-black text-white">Download Mobile App</div>
+                <div className="text-[10px] text-amber-300/80">Install for Android & iOS</div>
+              </div>
+            </div>
+            <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-amber-400 text-slate-950 shadow-sm">
+              Install
+            </span>
+          </button>
+
           <div className="flex flex-col gap-2">
             <button
               onClick={() => {
@@ -306,6 +343,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               Home
             </button>
+
             <button
               onClick={() => {
                 onNavigate('events');
