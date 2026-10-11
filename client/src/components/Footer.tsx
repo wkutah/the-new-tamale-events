@@ -129,7 +129,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCity }) => {
           <p>
             &copy; {new Date().getFullYear()} {BRANDING.appName}. All rights reserved.
           </p>
-          <div className="flex items-center gap-1 text-slate-400">
+          <div className="flex items-center gap-1.5 text-slate-400">
             <span>Powered with</span>
             <Heart size={13} className="text-rose-500 fill-rose-500" />
             <span>for the vibrant youth & culture of Northern Ghana</span>
@@ -138,6 +138,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCity }) => {
             <button onClick={() => onNavigate('admin')} className="hover:text-slate-300 transition-colors">
               Admin Portal
             </button>
+          </div>
+        </div>
+
+        {/* Far Bottom Attribution: Powered by Alshareme Media */}
+        <div className="mt-8 pt-6 border-t border-slate-900/80 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-xs text-slate-400 shadow-sm">
+            <span>Powered by</span>
+            <span className="font-black text-amber-400 tracking-wide text-xs sm:text-sm bg-gradient-to-r from-amber-400 via-amber-300 to-orange-400 bg-clip-text text-transparent">
+              Alshareme Media
+            </span>
           </div>
         </div>
       </div>

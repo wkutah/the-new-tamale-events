@@ -6,6 +6,7 @@ export const BRANDING = {
   tagline: 'The Heartbeat of Entertainment in Northern Ghana',
   subTagline: 'Discover concerts, nightlife, cultural festivals, comedy & campus vibes across Tamale, Damongo, Bolgatanga, Wa, and communities across Ghana.',
   foundedYear: '2026',
+  poweredBy: 'Alshareme Media',
   
   // Popular Northern Hubs & Open Locations
   popularCities: [
