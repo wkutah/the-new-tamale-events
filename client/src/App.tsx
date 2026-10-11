@@ -133,6 +133,7 @@ export const AppContent: React.FC = () => {
             initialCity={selectedCity}
             initialSearch={pageParams.search || ''}
             initialCategory={pageParams.category || 'All'}
+            initialSort={pageParams.sort || 'date_asc'}
             onSelectEvent={handleSelectEvent}
           />
         )}

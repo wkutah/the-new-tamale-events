@@ -16,14 +16,18 @@ function enrichEventWithVibe(evt) {
     else if (vibe_score >= 50) vibe_label = 'Active ⚡';
     else vibe_label = 'Dull 🥱';
   }
+  const comment_count = Number(evt.comment_count) || 0;
+  const trending_score = Number(evt.trending_score) || (comment_count * 3 + vibe_votes * 2);
+
   return {
     ...evt,
-    comment_count: Number(evt.comment_count) || 0,
+    comment_count,
     vibe_votes,
     vibe_exciting_count: exciting,
     vibe_dull_count: dull,
     vibe_score,
-    vibe_label
+    vibe_label,
+    trending_score
   };
 }
 
@@ -46,7 +50,11 @@ router.get('/', (req, res) => {
         (SELECT COUNT(*) FROM event_comments WHERE event_id = e.id) as comment_count,
         (SELECT COUNT(*) FROM event_ratings WHERE event_id = e.id) as vibe_votes,
         (SELECT COALESCE(SUM(CASE WHEN rating = 'exciting' THEN 1 ELSE 0 END), 0) FROM event_ratings WHERE event_id = e.id) as vibe_exciting_count,
-        (SELECT COALESCE(SUM(CASE WHEN rating = 'dull' THEN 1 ELSE 0 END), 0) FROM event_ratings WHERE event_id = e.id) as vibe_dull_count
+        (SELECT COALESCE(SUM(CASE WHEN rating = 'dull' THEN 1 ELSE 0 END), 0) FROM event_ratings WHERE event_id = e.id) as vibe_dull_count,
+        (
+          ((SELECT COUNT(*) FROM event_comments WHERE event_id = e.id) * 3) +
+          ((SELECT COUNT(*) FROM event_ratings WHERE event_id = e.id) * 2)
+        ) as trending_score
       FROM events e
       WHERE e.status = 'published'
     `;
@@ -89,7 +97,6 @@ router.get('/', (req, res) => {
 
     // Timeframe filters
     const today = new Date().toISOString().split('T')[0];
-
     if (timeframe === 'past') {
       sql += ` AND e.event_date < ?`;
       params.push(today);
@@ -116,7 +123,9 @@ router.get('/', (req, res) => {
     }
 
     // Sorting
-    if (sort === 'date_desc') {
+    if (sort === 'trending') {
+      sql += ` ORDER BY trending_score DESC, e.is_featured DESC, e.event_date ASC`;
+    } else if (sort === 'date_desc') {
       sql += ` ORDER BY e.event_date DESC, e.start_time DESC`;
     } else if (sort === 'featured') {
       sql += ` ORDER BY e.is_featured DESC, e.event_date ASC, e.start_time ASC`;
@@ -129,7 +138,16 @@ router.get('/', (req, res) => {
     }
 
     const rawEvents = db.prepare(sql).all(...params);
-    const events = rawEvents.map(enrichEventWithVibe);
+    const events = rawEvents.map((evt, idx) => {
+      const enriched = enrichEventWithVibe(evt);
+      if (sort === 'trending') {
+        return {
+          ...enriched,
+          trending_rank: idx + 1
+        };
+      }
+      return enriched;
+    });
 
     return res.json({
       count: events.length,
@@ -138,6 +156,54 @@ router.get('/', (req, res) => {
   } catch (err) {
     console.error('Events fetch error:', err);
     return res.status(500).json({ error: 'Failed to retrieve events from database.' });
+  }
+});
+
+// GET /api/events/trending - top talked-about events across the app
+router.get('/trending', (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const limit = Math.min(Number(req.query.limit) || 6, 20);
+    const rawEvents = db.prepare(`
+      SELECT 
+        e.*,
+        (SELECT COUNT(*) FROM event_comments WHERE event_id = e.id) as comment_count,
+        (SELECT COUNT(*) FROM event_ratings WHERE event_id = e.id) as vibe_votes,
+        (SELECT COALESCE(SUM(CASE WHEN rating = 'exciting' THEN 1 ELSE 0 END), 0) FROM event_ratings WHERE event_id = e.id) as vibe_exciting_count,
+        (SELECT COALESCE(SUM(CASE WHEN rating = 'dull' THEN 1 ELSE 0 END), 0) FROM event_ratings WHERE event_id = e.id) as vibe_dull_count,
+        (
+          ((SELECT COUNT(*) FROM event_comments WHERE event_id = e.id) * 3) +
+          ((SELECT COUNT(*) FROM event_ratings WHERE event_id = e.id) * 2)
+        ) as trending_score
+      FROM events e
+      WHERE e.status = 'published' AND e.event_date >= ?
+      ORDER BY trending_score DESC, e.event_date ASC
+      LIMIT ?
+    `).all(today, limit);
+
+    const events = rawEvents.map((evt, idx) => {
+      const enriched = enrichEventWithVibe(evt);
+      const latestComment = db.prepare(`
+        SELECT c.content, c.vibe_tag, c.created_at, p.full_name as author_name, p.avatar_url as author_avatar
+        FROM event_comments c
+        LEFT JOIN profiles p ON c.user_id = p.id
+        WHERE c.event_id = ?
+        ORDER BY c.created_at DESC
+        LIMIT 1
+      `).get(evt.id);
+
+      return {
+        ...enriched,
+        trending_rank: idx + 1,
+        latest_comment: latestComment || null,
+        buzz_summary: `${enriched.comment_count} crowd discussion${enriched.comment_count === 1 ? '' : 's'} • ${enriched.vibe_votes} crowd vote${enriched.vibe_votes === 1 ? '' : 's'}`
+      };
+    });
+
+    return res.json({ events });
+  } catch (err) {
+    console.error('Trending events fetch error:', err);
+    return res.status(500).json({ error: 'Failed to retrieve trending events.' });
   }
 });
 

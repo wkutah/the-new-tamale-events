@@ -15,7 +15,8 @@ import {
   X,
   ChevronDown,
   Sparkles,
-  PlusCircle
+  PlusCircle,
+  Flame
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -76,6 +77,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Compass size={16} />
             <span>Discover Events</span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('events', { sort: 'trending' })}
+            className="flex items-center gap-1.5 text-sm font-semibold transition-colors text-slate-300 hover:text-white group"
+          >
+            <Flame size={16} className="text-orange-500 fill-orange-500 group-hover:scale-110 transition-transform" />
+            <span>Trending</span>
           </button>
 
           {/* Quick City Dropdown */}
@@ -305,6 +314,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="text-left py-2 text-sm font-semibold text-white"
             >
               Discover All Events
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('events', { sort: 'trending' });
+                setIsMobileMenuOpen(false);
+              }}
+              className="flex items-center gap-2 py-2 text-sm font-semibold text-orange-400"
+            >
+              <Flame size={16} className="fill-orange-500" />
+              <span>Trending (Most Talked About)</span>
             </button>
           </div>
 

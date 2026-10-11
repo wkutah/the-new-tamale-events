@@ -44,6 +44,16 @@ export interface EventItem {
   vibe_dull_count?: number;
   vibe_score?: number;
   vibe_label?: string;
+  trending_rank?: number;
+  trending_score?: number;
+  buzz_summary?: string;
+  latest_comment?: {
+    content: string;
+    vibe_tag?: string;
+    created_at: string;
+    author_name: string;
+    author_avatar?: string;
+  } | null;
 }
 
 export interface EventComment {

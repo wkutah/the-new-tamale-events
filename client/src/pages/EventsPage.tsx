@@ -12,13 +12,15 @@ import {
   Calendar,
   Sparkles,
   RefreshCw,
-  Clock
+  Clock,
+  Flame
 } from 'lucide-react';
 
 interface EventsPageProps {
   initialCity?: string;
   initialSearch?: string;
   initialCategory?: string;
+  initialSort?: string;
   onSelectEvent: (event: EventItem) => void;
 }
 
@@ -26,6 +28,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
   initialCity = 'All',
   initialSearch = '',
   initialCategory = 'All',
+  initialSort = 'date_asc',
   onSelectEvent
 }) => {
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -38,7 +41,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>(initialSearch);
   const [isFreeOnly, setIsFreeOnly] = useState<boolean>(false);
   const [timeframe, setTimeframe] = useState<string>('upcoming'); // 'upcoming', 'this_weekend', 'today', 'past', 'all'
-  const [sortBy, setSortBy] = useState<string>('date_asc');
+  const [sortBy, setSortBy] = useState<string>(initialSort);
   const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
   const [availableCities, setAvailableCities] = useState<string[]>(BRANDING.popularCities);
 
@@ -55,7 +58,8 @@ export const EventsPage: React.FC<EventsPageProps> = ({
     if (initialCity && initialCity !== selectedCity) setSelectedCity(initialCity);
     if (initialSearch !== undefined) setSearchQuery(initialSearch);
     if (initialCategory && initialCategory !== selectedCategory) setSelectedCategory(initialCategory);
-  }, [initialCity, initialSearch, initialCategory]);
+    if (initialSort && initialSort !== sortBy) setSortBy(initialSort);
+  }, [initialCity, initialSearch, initialCategory, initialSort]);
 
   const loadEvents = async () => {
     setIsLoading(true);
@@ -151,6 +155,63 @@ export const EventsPage: React.FC<EventsPageProps> = ({
             </button>
           </div>
         </form>
+
+        {/* Quick Filter Views */}
+        <div className="flex flex-wrap items-center gap-2 mt-4">
+          <span className="text-xs font-semibold text-slate-400 mr-1">Quick Views:</span>
+          <button
+            onClick={() => {
+              setSortBy('trending');
+              setTimeframe('upcoming');
+            }}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5 ${
+              sortBy === 'trending'
+                ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 border-amber-300 shadow-[0_0_12px_rgba(249,115,22,0.4)]'
+                : 'bg-slate-900/80 text-orange-400 border-slate-800 hover:border-orange-500/40'
+            }`}
+          >
+            <Flame size={13} className={sortBy === 'trending' ? 'fill-slate-950' : 'fill-orange-400'} />
+            <span>🔥 Trending (Most Talked About)</span>
+          </button>
+          <button
+            onClick={() => {
+              setSortBy('date_asc');
+              setTimeframe('upcoming');
+            }}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+              sortBy !== 'trending' && timeframe === 'upcoming'
+                ? 'bg-amber-400 text-slate-950 border-amber-300 font-bold'
+                : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            All Upcoming
+          </button>
+          <button
+            onClick={() => {
+              setTimeframe(timeframe === 'this_weekend' ? 'upcoming' : 'this_weekend');
+              if (sortBy === 'trending') setSortBy('date_asc');
+            }}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+              timeframe === 'this_weekend'
+                ? 'bg-amber-400 text-slate-950 border-amber-300 font-bold'
+                : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            This Weekend
+          </button>
+          <button
+            onClick={() => {
+              setIsFreeOnly(!isFreeOnly);
+            }}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+              isFreeOnly
+                ? 'bg-emerald-400 text-slate-950 border-emerald-300 font-bold'
+                : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            Free Admission Only
+          </button>
+        </div>
       </div>
 
       {/* Main Grid: Filters Sidebar + Results */}
@@ -335,6 +396,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 outline-none focus:border-amber-400"
               >
+                <option value="trending">🔥 Trending (Most Talked About)</option>
                 <option value="date_asc">Event Date (Soonest first)</option>
                 <option value="featured">Featured First</option>
                 <option value="price_low">Price (Lowest first)</option>

@@ -92,6 +92,12 @@ export const EventCard: React.FC<EventCardProps> = ({
 
         {/* City Badge & Category over image */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center">
+          {event.trending_rank ? (
+            <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 border border-amber-300 shadow-[0_0_12px_rgba(249,115,22,0.6)] flex items-center gap-1">
+              <Flame size={12} className="fill-slate-950" />
+              <span>#{event.trending_rank} Trending</span>
+            </span>
+          ) : null}
           <CityBadge city={event.city} size="sm" />
           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-md text-slate-300 border border-slate-700/60">
             {event.category}
@@ -171,7 +177,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           )}
 
           {/* Social Buzz Stats */}
-          <div className="flex items-center gap-3 text-xs text-slate-400 mb-3 pt-1">
+          <div className="flex items-center flex-wrap gap-2 text-xs text-slate-400 mb-3 pt-1">
             <span className="inline-flex items-center gap-1 font-medium text-amber-400/90">
               <Flame size={13} className="text-rose-500 fill-rose-500" />
               <span>{event.vibe_votes ? `${event.vibe_score}% Exciting` : 'Vote Vibe'}</span>
@@ -181,6 +187,14 @@ export const EventCard: React.FC<EventCardProps> = ({
               <MessageSquare size={13} className="text-sky-400" />
               <span>{event.comment_count || 0} {event.comment_count === 1 ? 'comment' : 'comments'}</span>
             </span>
+            {event.trending_rank ? (
+              <>
+                <span className="text-slate-600">•</span>
+                <span className="text-orange-400 font-semibold text-[11px]">
+                  🔥 Trending
+                </span>
+              </>
+            ) : null}
           </div>
         </div>
 

@@ -229,6 +229,28 @@ async function runTests() {
     'Test 16: Event rating system records "exciting" vs "dull" votes and computes summary aggregates'
   );
 
+  // Test 17: Trending Events (Most Talked About & Community Buzz)
+  const trendingRows = db.prepare(`
+    SELECT 
+      e.id, e.title,
+      (SELECT COUNT(*) FROM event_comments WHERE event_id = e.id) as comment_count,
+      (SELECT COUNT(*) FROM event_ratings WHERE event_id = e.id) as vibe_votes,
+      (
+        ((SELECT COUNT(*) FROM event_comments WHERE event_id = e.id) * 3) +
+        ((SELECT COUNT(*) FROM event_ratings WHERE event_id = e.id) * 2)
+      ) as trending_score
+    FROM events e
+    WHERE e.status = 'published'
+    ORDER BY trending_score DESC, e.event_date ASC
+    LIMIT 5
+  `).all();
+  assert(
+    trendingRows.length >= 3 &&
+    Number(trendingRows[0].trending_score) >= Number(trendingRows[1].trending_score) &&
+    Number(trendingRows[0].comment_count) > 0,
+    'Test 17: Trending algorithm calculates buzz scores from attendee comments and ratings and ranks top talked-about events'
+  );
+
   console.log('\n========================================================');
   console.log(`  Tests Completed: ${passed} Passed, ${failed} Failed`);
   console.log('========================================================');

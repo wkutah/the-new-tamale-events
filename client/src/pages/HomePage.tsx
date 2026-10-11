@@ -16,7 +16,9 @@ import {
   Smile,
   GraduationCap,
   Layers,
-  ChevronRight
+  ChevronRight,
+  TrendingUp,
+  MessageSquare
 } from 'lucide-react';
 
 interface HomePageProps {
@@ -33,6 +35,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   onSelectCity
 }) => {
   const [featuredEvents, setFeaturedEvents] = useState<EventItem[]>([]);
+  const [trendingEvents, setTrendingEvents] = useState<EventItem[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<EventItem[]>([]);
   const [weekendEvents, setWeekendEvents] = useState<EventItem[]>([]);
   const [citySummaries, setCitySummaries] = useState<CitySummary[]>([]);
@@ -45,14 +48,16 @@ export const HomePage: React.FC<HomePageProps> = ({
       setIsLoading(true);
       setError(null);
       try {
-        const [featuredRes, upcomingRes, weekendRes, citiesRes] = await Promise.all([
+        const [featuredRes, trendingRes, upcomingRes, weekendRes, citiesRes] = await Promise.all([
           api.events.getFeatured(),
+          api.events.getTrending(6),
           api.events.getAll({ limit: '8', sort: 'date_asc' } as any),
           api.events.getAll({ timeframe: 'this_weekend' }),
           api.events.getCitiesSummary()
         ]);
 
         setFeaturedEvents(featuredRes.events || []);
+        setTrendingEvents(trendingRes.events || []);
         setUpcomingEvents(upcomingRes.events || []);
         setWeekendEvents(weekendRes.events || []);
         setCitySummaries(citiesRes.summaries || []);
@@ -178,7 +183,211 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </section>
 
-      {/* 2. Featured Events Section */}
+      {/* 2. Trending Buzz — Most Talked About Events */}
+      {trendingEvents.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
+          <div className="relative rounded-3xl overflow-hidden border border-orange-500/30 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/20 p-6 sm:p-8 md:p-10 shadow-[0_0_50px_-15px_rgba(249,115,22,0.15)]">
+            {/* Background ambient glow */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-rose-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+            {/* Header */}
+            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400 text-xs font-black uppercase tracking-wider mb-2">
+                  <Flame size={14} className="fill-orange-400 animate-pulse" />
+                  <span>Community Pulse • Real-Time Chatter</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white flex items-center gap-3">
+                  <span>Trending Right Now</span>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-800 text-amber-300 border border-slate-700">
+                    Most Talked About
+                  </span>
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+                  Events generating the most live crowd buzz, attendee discussions, and excitement ratings across Northern Ghana.
+                </p>
+              </div>
+
+              <button
+                onClick={() => onNavigate('events', { sort: 'trending' })}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/40 text-orange-300 hover:text-white font-bold text-xs transition-all shrink-0 self-start md:self-auto"
+              >
+                <TrendingUp size={15} />
+                <span>Explore All Trending</span>
+                <ChevronRight size={15} />
+              </button>
+            </div>
+
+            {/* Trending #1 Spotlight Card */}
+            {trendingEvents[0] && (
+              <div
+                onClick={() => onSelectEvent(trendingEvents[0])}
+                className="relative z-10 group cursor-pointer mb-6 rounded-2xl overflow-hidden bg-slate-900/90 border border-orange-500/40 hover:border-orange-400 transition-all duration-300 hover:shadow-[0_10px_35px_-10px_rgba(249,115,22,0.3)] hover:-translate-y-0.5"
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+                  {/* Left: Poster */}
+                  <div className="lg:col-span-5 h-64 sm:h-72 lg:h-full min-h-[260px] relative overflow-hidden bg-slate-950">
+                    <img
+                      src={trendingEvents[0].image_url}
+                      alt={trendingEvents[0].title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+                    <div className="absolute top-4 left-4 flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 font-black text-xs shadow-lg flex items-center gap-1.5 animate-pulse">
+                        <Flame size={14} className="fill-slate-950" />
+                        <span>#1 TOP TRENDING</span>
+                      </span>
+                      <CityBadge city={trendingEvents[0].city} size="sm" />
+                    </div>
+                  </div>
+
+                  {/* Right: Details & Latest Chatter */}
+                  <div className="lg:col-span-7 p-6 sm:p-7 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-orange-400 mb-2">
+                        <Calendar size={13} />
+                        <span>{trendingEvents[0].event_date} • {trendingEvents[0].start_time}</span>
+                        <span className="text-slate-600">•</span>
+                        <MapPin size={13} />
+                        <span>{trendingEvents[0].venue_name}</span>
+                      </div>
+
+                      <h3 className="text-xl sm:text-2xl font-black text-white group-hover:text-amber-400 transition-colors mb-2">
+                        {trendingEvents[0].title}
+                      </h3>
+
+                      <p className="text-xs sm:text-sm text-slate-300 line-clamp-2 leading-relaxed mb-4">
+                        {trendingEvents[0].description}
+                      </p>
+
+                      {/* Latest Community Quote / Chatter */}
+                      {trendingEvents[0].latest_comment ? (
+                        <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/90 mb-4">
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-2">
+                              {trendingEvents[0].latest_comment.author_avatar ? (
+                                <img
+                                  src={trendingEvents[0].latest_comment.author_avatar}
+                                  alt=""
+                                  className="w-5 h-5 rounded-full object-cover border border-amber-500/40"
+                                />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full bg-amber-500/20 text-[10px] font-bold text-amber-300 flex items-center justify-center">
+                                  {trendingEvents[0].latest_comment.author_name[0]}
+                                </div>
+                              )}
+                              <span className="text-xs font-bold text-slate-200">
+                                {trendingEvents[0].latest_comment.author_name}
+                              </span>
+                              {trendingEvents[0].latest_comment.vibe_tag && (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-900 text-amber-400 border border-slate-700">
+                                  {trendingEvents[0].latest_comment.vibe_tag}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-slate-500 font-medium">Live Attendee Chatter</span>
+                          </div>
+                          <p className="text-xs text-slate-300 italic line-clamp-2">
+                            "{trendingEvents[0].latest_comment.content}"
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Stats & Click CTA */}
+                    <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 text-xs text-slate-300 font-semibold">
+                        <span className="flex items-center gap-1.5 text-rose-400">
+                          <Flame size={15} className="fill-rose-400" />
+                          <span>{trendingEvents[0].vibe_score || 100}% Exciting</span>
+                        </span>
+                        <span className="text-slate-600">•</span>
+                        <span className="flex items-center gap-1.5 text-sky-400">
+                          <MessageSquare size={14} />
+                          <span>{trendingEvents[0].comment_count || 0} Comments</span>
+                        </span>
+                        <span className="text-slate-600">•</span>
+                        <span className="text-slate-400 text-[11px]">
+                          {trendingEvents[0].vibe_votes || 0} crowd votes
+                        </span>
+                      </div>
+
+                      <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 group-hover:text-amber-300">
+                        <span>Click to See What People Are Saying</span>
+                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Trending #2 to #4 Grid */}
+            {trendingEvents.length > 1 && (
+              <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {trendingEvents.slice(1, 4).map((evt) => (
+                  <div
+                    key={evt.id}
+                    onClick={() => onSelectEvent(evt)}
+                    className="group cursor-pointer rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-orange-500/50 p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="px-2.5 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/40 text-orange-300 text-xs font-black flex items-center gap-1">
+                          <Flame size={12} className="fill-orange-400 text-orange-400" />
+                          <span>#{evt.trending_rank} Trending</span>
+                        </span>
+                        <CityBadge city={evt.city} size="sm" />
+                      </div>
+
+                      <div className="flex gap-3 mb-3">
+                        <img
+                          src={evt.image_url}
+                          alt={evt.title}
+                          className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-800"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-1">
+                            {evt.title}
+                          </h4>
+                          <p className="text-[11px] text-amber-400/90 font-medium line-clamp-1 mt-0.5">
+                            {evt.venue_name}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {evt.event_date}
+                          </p>
+                        </div>
+                      </div>
+
+                      {evt.latest_comment && (
+                        <p className="text-[11px] text-slate-300 italic line-clamp-2 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 mb-3">
+                          "{evt.latest_comment.content}"
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 font-medium">
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className="text-rose-400 font-semibold">{evt.vibe_score || 100}% Exciting</span>
+                        <span>•</span>
+                        <span>{evt.comment_count || 0} comments</span>
+                      </div>
+                      <span className="text-amber-400 font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                        <span>Details</span>
+                        <ArrowRight size={12} />
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 3. Featured Events Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>

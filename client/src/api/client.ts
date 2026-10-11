@@ -99,6 +99,8 @@ export const api = {
 
     getFeatured: () => request<{ events: EventItem[] }>('/api/events/featured'),
 
+    getTrending: (limit: number = 6) => request<{ events: EventItem[] }>(`/api/events/trending?limit=${limit}`),
+
     getCitiesSummary: () => request<{ summaries: CitySummary[]; allCities?: string[] }>('/api/events/cities/summary'),
 
     getDetails: (slugOrId: string) =>
