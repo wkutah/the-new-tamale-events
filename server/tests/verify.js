@@ -189,12 +189,52 @@ async function runTests() {
     'Test 14: Real database calculation verified across cities'
   );
 
+  // Test 15: Event Comments (Live Crowd Vibe Updates)
+  const commentId = `cmt-test-${Date.now()}`;
+  queries.addComment.run(
+    commentId,
+    newEventId,
+    userId,
+    'Great vibe here right now, sound system is kicking!',
+    'Currently Here',
+    now
+  );
+  const eventComments = queries.getCommentsForEvent.all(newEventId);
+  const foundComment = eventComments.find(c => c.id === commentId);
+  assert(
+    foundComment !== undefined &&
+    foundComment.author_name === 'Test Attendee' &&
+    foundComment.vibe_tag === 'Currently Here',
+    'Test 15: Event comments system persists crowd vibe updates with attendee profile link'
+  );
+
+  // Test 16: Event Rating System ("Exciting" vs "Dull")
+  const ratingId = `rate-test-${Date.now()}`;
+  queries.upsertRating.run({
+    id: ratingId,
+    event_id: newEventId,
+    user_id: userId,
+    rating: 'exciting',
+    created_at: now,
+    updated_at: now
+  });
+  const ratingSummary = queries.getRatingSummaryForEvent.get(newEventId);
+  const userRating = queries.getUserRatingForEvent.get(newEventId, userId);
+  assert(
+    userRating !== undefined &&
+    userRating.rating === 'exciting' &&
+    ratingSummary !== undefined &&
+    Number(ratingSummary.exciting_count) >= 1 &&
+    Number(ratingSummary.total_votes) >= 1,
+    'Test 16: Event rating system records "exciting" vs "dull" votes and computes summary aggregates'
+  );
+
   console.log('\n========================================================');
   console.log(`  Tests Completed: ${passed} Passed, ${failed} Failed`);
   console.log('========================================================');
 
   if (failed === 0) {
-    console.log('  >>> ALL 14 ARCHITECTURAL TESTS PASSED SUCCESSFULLY! <<<\n');
+    console.log('  >>> ALL ARCHITECTURAL & SOCIAL TESTS PASSED SUCCESSFULLY! <<<\n');
     process.exit(0);
   } else {
     process.exit(1);

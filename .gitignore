@@ -4,3 +4,5 @@ bin/
 *.log
 .DS_Store
 .env
+*.db-shm
+*.db-wal

@@ -1,4 +1,4 @@
-import { EventItem, UserProfile, UserActivity, AdminStats, AdminAuditLog, CitySummary } from '../types';
+import { EventItem, UserProfile, UserActivity, AdminStats, AdminAuditLog, CitySummary, EventComment, VibeStats } from '../types';
 
 const TOKEN_KEY = 'nte_auth_token';
 
@@ -102,7 +102,35 @@ export const api = {
     getCitiesSummary: () => request<{ summaries: CitySummary[]; allCities?: string[] }>('/api/events/cities/summary'),
 
     getDetails: (slugOrId: string) =>
-      request<{ event: EventItem; isSaved: boolean; related: EventItem[] }>(`/api/events/${slugOrId}`)
+      request<{
+        event: EventItem;
+        isSaved: boolean;
+        comments: EventComment[];
+        vibeStats: VibeStats;
+        related: EventItem[];
+      }>(`/api/events/${slugOrId}`),
+
+    addComment: (eventId: string, data: { content: string; vibe_tag?: string }) =>
+      request<{ message: string; comment: EventComment }>(`/api/events/${eventId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      }),
+
+    deleteComment: (eventId: string, commentId: string) =>
+      request<{ message: string }>(`/api/events/${eventId}/comments/${commentId}`, {
+        method: 'DELETE'
+      }),
+
+    rateEvent: (eventId: string, rating: 'exciting' | 'dull') =>
+      request<{ message: string; vibeStats: VibeStats }>(`/api/events/${eventId}/ratings`, {
+        method: 'POST',
+        body: JSON.stringify({ rating })
+      }),
+
+    removeRating: (eventId: string) =>
+      request<{ message: string; vibeStats: VibeStats }>(`/api/events/${eventId}/ratings`, {
+        method: 'DELETE'
+      })
   },
 
   // Saved Events

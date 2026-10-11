@@ -136,6 +136,35 @@ function initializeDatabase() {
     );
   `);
 
+  // 9. Event Comments Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS event_comments (
+      id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      vibe_tag TEXT DEFAULT 'attendee',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+    );
+  `);
+
+  // 10. Event Ratings Table (Vibe: exciting vs dull)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS event_ratings (
+      id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      rating TEXT NOT NULL CHECK(rating IN ('exciting', 'dull')),
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(event_id, user_id),
+      FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+    );
+  `);
+
   // Create Indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_events_city ON events(city);
@@ -145,6 +174,8 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_saved_events_user ON saved_events(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_activity_user ON user_activity(user_id);
     CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_admin ON admin_audit_logs(administrator_id);
+    CREATE INDEX IF NOT EXISTS idx_event_comments_event ON event_comments(event_id);
+    CREATE INDEX IF NOT EXISTS idx_event_ratings_event ON event_ratings(event_id);
   `);
 
   seedInitialData();
@@ -316,6 +347,58 @@ const queries = {
     LEFT JOIN profiles p ON l.administrator_id = p.id
     ORDER BY l.created_at DESC
     LIMIT ? OFFSET ?
+  `),
+
+  // Comments
+  getCommentsForEvent: db.prepare(`
+    SELECT c.*, p.full_name as author_name, p.avatar_url as author_avatar, p.preferred_city as author_city
+    FROM event_comments c
+    JOIN profiles p ON c.user_id = p.id
+    WHERE c.event_id = ?
+    ORDER BY c.created_at DESC
+  `),
+
+  getCommentCountForEvent: db.prepare(`
+    SELECT COUNT(*) as count FROM event_comments WHERE event_id = ?
+  `),
+
+  addComment: db.prepare(`
+    INSERT INTO event_comments (id, event_id, user_id, content, vibe_tag, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `),
+
+  findCommentById: db.prepare(`
+    SELECT * FROM event_comments WHERE id = ?
+  `),
+
+  deleteComment: db.prepare(`
+    DELETE FROM event_comments WHERE id = ?
+  `),
+
+  // Ratings / Vibe Check
+  getRatingSummaryForEvent: db.prepare(`
+    SELECT 
+      COUNT(*) as total_votes,
+      COALESCE(SUM(CASE WHEN rating = 'exciting' THEN 1 ELSE 0 END), 0) as exciting_count,
+      COALESCE(SUM(CASE WHEN rating = 'dull' THEN 1 ELSE 0 END), 0) as dull_count
+    FROM event_ratings
+    WHERE event_id = ?
+  `),
+
+  getUserRatingForEvent: db.prepare(`
+    SELECT rating FROM event_ratings WHERE event_id = ? AND user_id = ?
+  `),
+
+  upsertRating: db.prepare(`
+    INSERT INTO event_ratings (id, event_id, user_id, rating, created_at, updated_at)
+    VALUES (@id, @event_id, @user_id, @rating, @created_at, @updated_at)
+    ON CONFLICT(event_id, user_id) DO UPDATE SET
+      rating = excluded.rating,
+      updated_at = excluded.updated_at
+  `),
+
+  deleteRating: db.prepare(`
+    DELETE FROM event_ratings WHERE event_id = ? AND user_id = ?
   `),
 
   // Stats

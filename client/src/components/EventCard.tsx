@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { EventItem } from '../types';
 import { CityBadge } from './CityBadge';
-import { Calendar, Clock, MapPin, Heart, ArrowUpRight, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, MapPin, Heart, ArrowUpRight, AlertTriangle, Flame, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 
@@ -96,6 +96,16 @@ export const EventCard: React.FC<EventCardProps> = ({
           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-md text-slate-300 border border-slate-700/60">
             {event.category}
           </span>
+          {event.vibe_votes && event.vibe_votes > 0 ? (
+            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md border flex items-center gap-1 ${
+              (event.vibe_score || 0) >= 80 
+                ? 'bg-rose-950/85 text-rose-300 border-rose-500/40 shadow-[0_0_10px_rgba(244,63,94,0.3)]' 
+                : 'bg-amber-950/85 text-amber-300 border-amber-500/40'
+            }`}>
+              <Flame size={12} className="fill-current" />
+              <span>{event.vibe_score}% Exciting</span>
+            </span>
+          ) : null}
         </div>
 
         {/* Save Heart Button */}
@@ -155,10 +165,23 @@ export const EventCard: React.FC<EventCardProps> = ({
 
           {/* Performers / Snippet */}
           {event.performers && (
-            <p className="text-xs text-slate-400 line-clamp-1 mb-4 italic">
+            <p className="text-xs text-slate-400 line-clamp-1 mb-3 italic">
               Feat. {event.performers}
             </p>
           )}
+
+          {/* Social Buzz Stats */}
+          <div className="flex items-center gap-3 text-xs text-slate-400 mb-3 pt-1">
+            <span className="inline-flex items-center gap-1 font-medium text-amber-400/90">
+              <Flame size={13} className="text-rose-500 fill-rose-500" />
+              <span>{event.vibe_votes ? `${event.vibe_score}% Exciting` : 'Vote Vibe'}</span>
+            </span>
+            <span className="text-slate-600">•</span>
+            <span className="inline-flex items-center gap-1 text-slate-400">
+              <MessageSquare size={13} className="text-sky-400" />
+              <span>{event.comment_count || 0} {event.comment_count === 1 ? 'comment' : 'comments'}</span>
+            </span>
+          </div>
         </div>
 
         {/* Footer: Price & Action */}

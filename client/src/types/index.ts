@@ -38,6 +38,32 @@ export interface EventItem {
   created_by?: string;
   created_at: string;
   updated_at: string;
+  comment_count?: number;
+  vibe_votes?: number;
+  vibe_exciting_count?: number;
+  vibe_dull_count?: number;
+  vibe_score?: number;
+  vibe_label?: string;
+}
+
+export interface EventComment {
+  id: string;
+  event_id: string;
+  user_id: string;
+  content: string;
+  vibe_tag?: string;
+  created_at: string;
+  author_name: string;
+  author_avatar?: string;
+  author_city?: string;
+}
+
+export interface VibeStats {
+  totalVotes: number;
+  excitingCount: number;
+  dullCount: number;
+  excitingPercent: number;
+  userRating: 'exciting' | 'dull' | null;
 }
 
 export interface UserProfile {
