@@ -8,7 +8,9 @@ export type EventCategory =
   | 'Comedy'
   | 'Campus'
   | 'Conference'
-  | 'Sports';
+  | 'Sports'
+  | 'Religious Event'
+  | 'Religious';
 
 export type EventStatus = 'draft' | 'published' | 'cancelled' | 'postponed' | 'archived';
 

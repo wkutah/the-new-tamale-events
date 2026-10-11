@@ -90,8 +90,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCity }) => {
                 </button>
               </li>
               <li>
-                <button onClick={() => onNavigate('events')} className="hover:text-amber-400 transition-colors">
+                <button onClick={() => onNavigate('events', { category: 'Comedy' })} className="hover:text-amber-400 transition-colors">
                   Comedy & Stand-up
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('events', { category: 'Religious Event' })} className="hover:text-amber-400 transition-colors">
+                  Religious Events
                 </button>
               </li>
             </ul>

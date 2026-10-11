@@ -79,7 +79,8 @@ export const BRANDING = {
     { id: 'Festival', name: 'Festivals & Fairs', icon: 'Flame' },
     { id: 'Comedy', name: 'Comedy & Theatre', icon: 'Smile' },
     { id: 'Campus', name: 'Campus & Youth Raves', icon: 'GraduationCap' },
-    { id: 'Conference', name: 'Tech & Creator Summits', icon: 'Cpu' }
+    { id: 'Conference', name: 'Tech & Creator Summits', icon: 'Cpu' },
+    { id: 'Religious Event', name: 'Religious Events & Gatherings', icon: 'Sun' }
   ],
 
   contact: {

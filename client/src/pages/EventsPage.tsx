@@ -338,6 +338,7 @@ export const EventsPage: React.FC<EventsPageProps> = ({
                 <option value="Nightlife">Nightlife & Lounges</option>
                 <option value="Cultural">Cultural Celebrations</option>
                 <option value="Festival">Festivals & Fairs</option>
+                <option value="Religious Event">Religious Events & Gatherings</option>
                 <option value="Comedy">Comedy & Theatre</option>
                 <option value="Campus">Campus & Youth</option>
                 <option value="Conference">Summits & Tech</option>

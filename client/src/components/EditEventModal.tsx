@@ -286,6 +286,7 @@ export const EditEventModal: React.FC<EditEventModalProps> = ({
                 <option value="Nightlife">Nightlife</option>
                 <option value="Cultural">Cultural</option>
                 <option value="Festival">Festival</option>
+                <option value="Religious Event">Religious Event</option>
                 <option value="Comedy">Comedy</option>
                 <option value="Campus">Campus</option>
                 <option value="Conference">Conference</option>

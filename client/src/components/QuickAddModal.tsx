@@ -210,6 +210,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 <option value="Nightlife">Nightlife / Club</option>
                 <option value="Cultural">Cultural Celebration</option>
                 <option value="Festival">Festival & Fair</option>
+                <option value="Religious Event">Religious Event</option>
                 <option value="Comedy">Comedy Show</option>
                 <option value="Campus">Campus / Student</option>
                 <option value="Conference">Summit / Talk</option>
