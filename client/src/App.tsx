@@ -13,6 +13,7 @@ import { InstallAppModal } from './components/InstallAppModal';
 import { EventItem } from './types';
 import { BRANDING } from './config/branding';
 import { Smartphone, X } from 'lucide-react';
+import { api } from './api/client';
 
 export const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>('home');
@@ -21,6 +22,16 @@ export const AppContent: React.FC = () => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
   const [showInstallPill, setShowInstallPill] = useState<boolean>(false);
+
+  // Periodic presence heartbeat every 45s while browsing
+  useEffect(() => {
+    const ping = () => {
+      api.activity.sendHeartbeat(window.location.hash || window.location.pathname).catch(() => {});
+    };
+    ping(); // Immediate ping on app mount
+    const interval = setInterval(ping, 45000);
+    return () => clearInterval(interval);
+  }, [currentPage]);
 
   // Check if mobile and show floating install pill after 3s
   useEffect(() => {
@@ -36,6 +47,7 @@ export const AppContent: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, []);
+
 
   // Sync hash routing on popstate & initial load
   useEffect(() => {

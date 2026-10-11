@@ -24,7 +24,13 @@ import {
   BarChart3,
   ExternalLink,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  Radio,
+  Activity,
+  Globe,
+  UserCheck,
+  Sparkles,
+  Circle
 } from 'lucide-react';
 
 interface AdminDashboardPageProps {
@@ -43,6 +49,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   // Stats & Overview
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [onlineUsersList, setOnlineUsersList] = useState<UserProfile[]>([]);
   const [recentEvents, setRecentEvents] = useState<EventItem[]>([]);
   const [recentLogs, setRecentLogs] = useState<AdminAuditLog[]>([]);
 
@@ -56,6 +63,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   // Users Directory state
   const [usersList, setUsersList] = useState<UserProfile[]>([]);
+  const [userStats, setUserStats] = useState<{
+    total: number;
+    onlineCount: number;
+    activeTodayCount: number;
+    adminsCount: number;
+  } | null>(null);
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'online' | 'active_today' | 'admin'>('all');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
   // Audit Logs state
@@ -74,6 +89,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     try {
       const res = await api.admin.getOverview();
       setStats(res.stats);
+      setOnlineUsersList(res.onlineUsersList || []);
       setRecentEvents(res.recentEvents || []);
       setRecentLogs(res.recentLogs || []);
     } catch (err) {
@@ -101,8 +117,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const loadUsers = async () => {
     setIsLoadingUsers(true);
     try {
-      const res = await api.admin.getUsers();
+      const res = await api.admin.getUsers({
+        status: userStatusFilter,
+        search: userSearchQuery
+      });
       setUsersList(res.users || []);
+      if (res.stats) {
+        setUserStats(res.stats);
+      }
     } catch (err) {
       console.error('Failed to load users:', err);
     } finally {
@@ -122,6 +144,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     }
   };
 
+  // Initial load on mount and tab switch
   useEffect(() => {
     if (isAdmin) {
       loadOverview();
@@ -129,14 +152,28 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   }, [isAdmin]);
 
   useEffect(() => {
-    if (isAdmin && activeTab === 'events') {
+    if (!isAdmin) return;
+    if (activeTab === 'events') {
       loadAdminEvents();
-    } else if (isAdmin && activeTab === 'users') {
+    } else if (activeTab === 'users') {
       loadUsers();
-    } else if (isAdmin && activeTab === 'logs') {
+    } else if (activeTab === 'logs') {
       loadAuditLogs();
     }
-  }, [isAdmin, activeTab, statusFilter, cityFilter]);
+  }, [isAdmin, activeTab, statusFilter, cityFilter, userStatusFilter, userSearchQuery]);
+
+  // Periodic polling for live presence when on overview or users tab
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (activeTab === 'overview') {
+      const interval = setInterval(loadOverview, 20000);
+      return () => clearInterval(interval);
+    } else if (activeTab === 'users') {
+      const interval = setInterval(loadUsers, 20000);
+      return () => clearInterval(interval);
+    }
+  }, [isAdmin, activeTab, userStatusFilter, userSearchQuery]);
+
 
   const handleStatusChange = async (eventId: string, newStatus: string) => {
     try {
@@ -285,6 +322,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         >
           <Users size={15} />
           <span>Registered Users ({stats ? stats.totalUsers : '...'})</span>
+          {stats && typeof stats.onlineUsers === 'number' && stats.onlineUsers > 0 && (
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              {stats.onlineUsers} Online
+            </span>
+          )}
         </button>
 
         <button
@@ -303,8 +346,168 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       {/* 1. OVERVIEW TAB */}
       {activeTab === 'overview' && stats && (
         <div className="space-y-8">
+          {/* Real-time Community & User Presence Monitoring */}
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-black text-white">Live Community & Presence Monitor</h2>
+                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Live Heartbeat Sync
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Real-time audience monitoring, active session heartbeats, and registered account telemetry.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={loadOverview}
+                  className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 font-semibold flex items-center gap-1.5 transition-all"
+                >
+                  <RefreshCw size={13} />
+                  <span>Refresh Presence</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <span>Open Users Directory</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Presence Metric Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Total Registered Users */}
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-all">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                  <span className="font-bold uppercase tracking-wider text-[10px]">Registered Users</span>
+                  <UserCheck size={16} className="text-blue-400" />
+                </div>
+                <div className="text-3xl font-black text-white tracking-tight">{stats.totalUsers}</div>
+                <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                  <span>Persistent DB accounts</span>
+                </div>
+              </div>
+
+              {/* Online Users Right Now */}
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/30 hover:border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.06)] transition-all">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                  <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-400 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Online Right Now
+                  </span>
+                  <Radio size={16} className="text-emerald-400 animate-pulse" />
+                </div>
+                <div className="text-3xl font-black text-emerald-400 tracking-tight">{stats.onlineUsers}</div>
+                <div className="text-[11px] text-emerald-400/80 mt-1 flex items-center gap-1">
+                  <span>Active within last 5 mins</span>
+                </div>
+              </div>
+
+              {/* Active Today */}
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-all">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                  <span className="font-bold uppercase tracking-wider text-[10px]">Active Today</span>
+                  <Activity size={16} className="text-amber-400" />
+                </div>
+                <div className="text-3xl font-black text-amber-400 tracking-tight">{stats.activeTodayUsers}</div>
+                <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                  <span>Browsed in last 24h</span>
+                </div>
+              </div>
+
+              {/* Live Concurrent Visitors */}
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-all">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                  <span className="font-bold uppercase tracking-wider text-[10px]">Platform Activity</span>
+                  <Globe size={16} className="text-indigo-400" />
+                </div>
+                <div className="text-3xl font-black text-indigo-400 tracking-tight">{stats.activeVisitors}</div>
+                <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                  <span>Active visitor & user pulses</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Who is Online Right Now Shelf */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span>Who's Online Right Now ({onlineUsersList.length})</span>
+                </h3>
+                {onlineUsersList.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setUserStatusFilter('online');
+                      setActiveTab('users');
+                    }}
+                    className="text-[11px] text-amber-400 hover:underline font-bold"
+                  >
+                    View in Users Directory →
+                  </button>
+                )}
+              </div>
+
+              {onlineUsersList.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {onlineUsersList.map((onlineUser) => (
+                    <div
+                      key={onlineUser.id}
+                      className="p-3 rounded-2xl bg-slate-950/90 border border-emerald-500/20 hover:border-emerald-500/40 flex items-center justify-between gap-3 transition-all"
+                    >
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="relative shrink-0">
+                          <img
+                            src={onlineUser.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(onlineUser.full_name)}`}
+                            alt=""
+                            className="w-10 h-10 rounded-full border border-slate-700 object-cover"
+                          />
+                          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-950" />
+                        </div>
+                        <div className="truncate">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-white text-xs truncate">{onlineUser.full_name}</span>
+                            {onlineUser.role === 'admin' && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-400/20 text-amber-400 border border-amber-400/30">
+                                ADMIN
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400 block truncate">{onlineUser.email}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <CityBadge city={onlineUser.preferred_city} size="sm" />
+                        <span className="text-[10px] text-emerald-400 font-semibold block mt-1">
+                          {onlineUser.last_active_human || 'Online now'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                  <Circle size={10} className="text-slate-600" />
+                  <span>No registered members sent a heartbeat in the last 5 minutes. (Admin and member heartbeats are captured automatically as users browse).</span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Key Metrics Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-center">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Published</span>
               <span className="text-2xl font-black text-emerald-400 mt-1 block">{stats.published}</span>
@@ -333,11 +536,6 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-center">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Archived</span>
               <span className="text-2xl font-black text-purple-400 mt-1 block">{stats.archived}</span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-center col-span-2 sm:col-span-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Total Users</span>
-              <span className="text-2xl font-black text-blue-400 mt-1 block">{stats.totalUsers}</span>
             </div>
           </div>
 
@@ -641,54 +839,238 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         </div>
       )}
 
-      {/* 3. REGISTERED USERS DIRECTORY */}
+      {/* 3. REGISTERED USERS DIRECTORY & LIVE PRESENCE MONITOR */}
       {activeTab === 'users' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          {/* Header & Refresh */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl font-bold text-white">Registered Users Directory</h3>
-              <p className="text-xs text-slate-400">
-                All registered accounts stored in the persistent database. Passwords are encrypted with bcrypt and never exposed.
+              <div className="flex items-center gap-2">
+                <h3 className="text-2xl font-black text-white">Registered Users Directory</h3>
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live Presence Tracking
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Monitor platform community, see who is online right now, and inspect registered member accounts. Passwords are securely hashed with bcrypt and never exposed.
               </p>
             </div>
-            <button
-              onClick={loadUsers}
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
-            >
-              <RefreshCw size={15} />
-            </button>
+            <div className="flex items-center gap-2.5">
+              <span className="text-[11px] text-slate-500 hidden sm:inline">Auto-refreshes every 20s</span>
+              <button
+                onClick={loadUsers}
+                className="py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs flex items-center gap-2 transition-all"
+              >
+                <RefreshCw size={14} className={isLoadingUsers ? 'animate-spin' : ''} />
+                <span>Sync Now</span>
+              </button>
+            </div>
           </div>
 
+          {/* User Metrics 4-Card Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div
+              onClick={() => setUserStatusFilter('all')}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                userStatusFilter === 'all'
+                  ? 'bg-slate-900 border-amber-400/60 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
+                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span className="font-bold uppercase tracking-wider text-[10px]">Total Registered</span>
+                <Users size={16} className="text-blue-400" />
+              </div>
+              <div className="text-2xl font-black text-white">{userStats?.total ?? stats?.totalUsers ?? usersList.length}</div>
+              <span className="text-[11px] text-slate-400">All member accounts</span>
+            </div>
+
+            <div
+              onClick={() => setUserStatusFilter('online')}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                userStatusFilter === 'online'
+                  ? 'bg-slate-900 border-emerald-500/80 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
+                  : 'bg-slate-900/80 border-slate-800 hover:border-emerald-500/40'
+              }`}
+            >
+              <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-400 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Online Right Now
+                </span>
+                <Radio size={16} className="text-emerald-400 animate-pulse" />
+              </div>
+              <div className="text-2xl font-black text-emerald-400">{userStats?.onlineCount ?? stats?.onlineUsers ?? 0}</div>
+              <span className="text-[11px] text-emerald-400/80">Active in last 5m</span>
+            </div>
+
+            <div
+              onClick={() => setUserStatusFilter('active_today')}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                userStatusFilter === 'active_today'
+                  ? 'bg-slate-900 border-amber-500/80 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                  : 'bg-slate-900/80 border-slate-800 hover:border-amber-500/40'
+              }`}
+            >
+              <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span className="font-bold uppercase tracking-wider text-[10px]">Active Today</span>
+                <Activity size={16} className="text-amber-400" />
+              </div>
+              <div className="text-2xl font-black text-amber-400">{userStats?.activeTodayCount ?? stats?.activeTodayUsers ?? 0}</div>
+              <span className="text-[11px] text-slate-400">Active in last 24h</span>
+            </div>
+
+            <div
+              onClick={() => setUserStatusFilter('admin')}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                userStatusFilter === 'admin'
+                  ? 'bg-slate-900 border-purple-500/80 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                  : 'bg-slate-900/80 border-slate-800 hover:border-purple-500/40'
+              }`}
+            >
+              <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                <span className="font-bold uppercase tracking-wider text-[10px]">Administrators</span>
+                <ShieldCheck size={16} className="text-purple-400" />
+              </div>
+              <div className="text-2xl font-black text-purple-400">{userStats?.adminsCount ?? 0}</div>
+              <span className="text-[11px] text-slate-400">Security clearance</span>
+            </div>
+          </div>
+
+          {/* Filter Bar & Search */}
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setUserStatusFilter('all')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  userStatusFilter === 'all'
+                    ? 'bg-amber-400 text-slate-950 font-black'
+                    : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                All Users ({userStats?.total ?? 0})
+              </button>
+
+              <button
+                onClick={() => setUserStatusFilter('online')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  userStatusFilter === 'online'
+                    ? 'bg-emerald-500 text-slate-950 font-black'
+                    : 'bg-slate-950 text-slate-400 hover:text-emerald-400 border border-slate-800'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span>Online Now ({userStats?.onlineCount ?? 0})</span>
+              </button>
+
+              <button
+                onClick={() => setUserStatusFilter('active_today')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  userStatusFilter === 'active_today'
+                    ? 'bg-amber-400 text-slate-950 font-black'
+                    : 'bg-slate-950 text-slate-400 hover:text-amber-400 border border-slate-800'
+                }`}
+              >
+                <span>Active Today ({userStats?.activeTodayCount ?? 0})</span>
+              </button>
+
+              <button
+                onClick={() => setUserStatusFilter('admin')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  userStatusFilter === 'admin'
+                    ? 'bg-purple-500 text-white font-black'
+                    : 'bg-slate-950 text-slate-400 hover:text-purple-400 border border-slate-800'
+                }`}
+              >
+                Admins ({userStats?.adminsCount ?? 0})
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative flex items-center min-w-[240px] flex-1 sm:flex-initial">
+              <Search size={15} className="absolute left-3 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search user by name, email, city..."
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && loadUsers()}
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-amber-400 placeholder:text-slate-500"
+              />
+            </div>
+          </div>
+
+          {/* Users Table */}
           <div className="rounded-3xl bg-slate-900/80 border border-slate-800 overflow-hidden shadow-xl">
             {isLoadingUsers ? (
-              <div className="py-16 text-center text-xs text-slate-500">Loading users...</div>
-            ) : (
+              <div className="py-20 text-center text-xs text-slate-400 flex flex-col items-center gap-2">
+                <RefreshCw size={20} className="animate-spin text-amber-400" />
+                <span>Loading registered users & presence status...</span>
+              </div>
+            ) : usersList.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-800">
                     <tr>
-                      <th className="py-3.5 px-4">User</th>
+                      <th className="py-3.5 px-4">Member Name</th>
+                      <th className="py-3.5 px-3">Live Presence Status</th>
                       <th className="py-3.5 px-3">Email Address</th>
                       <th className="py-3.5 px-3">Preferred City</th>
                       <th className="py-3.5 px-3">Role</th>
-                      <th className="py-3.5 px-4">Registered On</th>
+                      <th className="py-3.5 px-4">Registered Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
                     {usersList.map((u) => (
                       <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3.5 px-4 flex items-center gap-2.5">
-                          <img
-                            src={u.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.full_name)}`}
-                            alt=""
-                            className="w-8 h-8 rounded-full border border-slate-700"
-                          />
-                          <span className="font-bold text-white">{u.full_name}</span>
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="relative shrink-0">
+                              <img
+                                src={u.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.full_name)}`}
+                                alt=""
+                                className="w-9 h-9 rounded-full border border-slate-700 object-cover"
+                              />
+                              {u.is_online ? (
+                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-slate-950" />
+                              ) : u.is_active_today ? (
+                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-amber-400 border-2 border-slate-950" />
+                              ) : null}
+                            </div>
+                            <div>
+                              <span className="font-bold text-white block">{u.full_name}</span>
+                              <span className="text-[10px] text-slate-500">ID: {u.id.substring(0, 8)}...</span>
+                            </div>
+                          </div>
                         </td>
-                        <td className="py-3.5 px-3 text-slate-300">{u.email}</td>
+
+                        {/* Live Presence Status */}
+                        <td className="py-3.5 px-3">
+                          {u.is_online ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                              <span>Online Now ({u.last_active_human || 'Active'})</span>
+                            </span>
+                          ) : u.is_active_today ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              <span>Active Today ({u.last_active_human})</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] text-slate-500 bg-slate-950 border border-slate-800">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                              <span>Offline ({u.last_seen_at ? u.last_active_human : 'Never active'})</span>
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-3 text-slate-300 font-mono text-[11px]">{u.email}</td>
+
                         <td className="py-3.5 px-3">
                           <CityBadge city={u.preferred_city} size="sm" />
                         </td>
+
                         <td className="py-3.5 px-3">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                             u.role === 'admin'
@@ -698,7 +1080,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                             {u.role.toUpperCase()}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+
+                        <td className="py-3.5 px-4 text-slate-400 text-[11px]">
                           {new Date(u.created_at).toLocaleDateString('en-GB', {
                             year: 'numeric',
                             month: 'short',
@@ -709,6 +1092,22 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     ))}
                   </tbody>
                 </table>
+              </div>
+            ) : (
+              <div className="py-16 text-center text-xs text-slate-500 space-y-2">
+                <Users size={32} className="mx-auto text-slate-700" />
+                <p>No registered users found matching the selected filter ({userStatusFilter}).</p>
+                {userSearchQuery && (
+                  <button
+                    onClick={() => {
+                      setUserSearchQuery('');
+                      setUserStatusFilter('all');
+                    }}
+                    className="text-xs text-amber-400 hover:underline font-bold"
+                  >
+                    Clear search filter
+                  </button>
+                )}
               </div>
             )}
           </div>

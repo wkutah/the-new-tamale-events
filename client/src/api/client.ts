@@ -167,14 +167,30 @@ export const api = {
       request<{ success: boolean }>('/api/activity/log', {
         method: 'POST',
         body: JSON.stringify(payload)
+      }),
+
+    sendHeartbeat: (path: string = '/') =>
+      request<{
+        success: boolean;
+        isAuthenticated: boolean;
+        onlineRegisteredCount: number;
+        activeVisitors: number;
+      }>('/api/activity/heartbeat', {
+        method: 'POST',
+        body: JSON.stringify({ path })
       })
   },
 
   // Admin
   admin: {
-    getOverview: () => request<{ stats: AdminStats; recentEvents: EventItem[]; recentLogs: AdminAuditLog[] }>(
-      '/api/admin/overview'
-    ),
+    getOverview: () =>
+      request<{
+        stats: AdminStats;
+        onlineUsersList?: UserProfile[];
+        recentEvents: EventItem[];
+        recentLogs: AdminAuditLog[];
+      }>('/api/admin/overview'),
+
 
     getEvents: (params: { status?: string; city?: string; search?: string; page?: number } = {}) => {
       const query = new URLSearchParams();
@@ -220,7 +236,22 @@ export const api = {
       });
     },
 
-    getUsers: () => request<{ users: UserProfile[] }>('/api/admin/users'),
+    getUsers: (params: { status?: string; search?: string } = {}) => {
+      const query = new URLSearchParams();
+      if (params.status && params.status !== 'all') query.set('status', params.status);
+      if (params.search) query.set('search', params.search);
+      const qs = query.toString();
+      return request<{
+        users: UserProfile[];
+        stats?: {
+          total: number;
+          onlineCount: number;
+          activeTodayCount: number;
+          adminsCount: number;
+        };
+      }>(`/api/admin/users${qs ? `?${qs}` : ''}`);
+    },
+
 
     getAuditLogs: (page = 1) =>
       request<{ logs: AdminAuditLog[]; total: number; page: number; limit: number }>(

@@ -1,10 +1,39 @@
 const express = require('express');
 const router = express.Router();
 const { db, queries } = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { recordActivity } = require('../utils/activity');
+const { touchUser, touchVisitor, getPresenceOverview } = require('../utils/presence');
 
+// POST /api/activity/heartbeat - Real-time activity pulse for live presence tracking
+router.post('/heartbeat', optionalAuth, (req, res) => {
+  try {
+    const sessionId = req.headers['x-session-id'] || req.ip;
+    const currentPath = req.body.path || '/';
+
+    if (req.user) {
+      touchUser(req.user.id, currentPath);
+    } else {
+      touchVisitor(sessionId);
+    }
+
+    const overview = getPresenceOverview();
+
+    return res.json({
+      success: true,
+      isAuthenticated: !!req.user,
+      onlineRegisteredCount: overview.onlineRegisteredCount,
+      activeVisitors: overview.activeVisitors
+    });
+  } catch (err) {
+    console.error('Heartbeat error:', err);
+    return res.status(500).json({ error: 'Failed to record activity heartbeat.' });
+  }
+});
+
+// All routes below require active authentication
 router.use(requireAuth);
+
 
 // GET /api/activity - get authenticated user's activity log
 router.get('/', (req, res) => {

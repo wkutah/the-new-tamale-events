@@ -8,6 +8,7 @@ const uuidv4 = () => crypto.randomUUID();
 const { db, queries } = require('../db');
 const { requireAdmin } = require('../middleware/auth');
 const { recordAuditLog } = require('../utils/activity');
+const { getPresenceOverview } = require('../utils/presence');
 
 // Ensure uploads directory exists
 const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
@@ -46,6 +47,7 @@ router.use(requireAdmin);
 router.get('/overview', (req, res) => {
   try {
     const stats = queries.getAdminStats();
+    const presence = getPresenceOverview();
 
     // Recent events created or updated
     const recentEvents = db.prepare(`
@@ -58,7 +60,14 @@ router.get('/overview', (req, res) => {
     const recentLogs = queries.getAuditLogs.all(8, 0);
 
     return res.json({
-      stats,
+      stats: {
+        ...stats,
+        totalUsers: presence.totalUsers,
+        onlineUsers: presence.onlineRegisteredCount,
+        activeTodayUsers: presence.activeTodayCount,
+        activeVisitors: presence.activeVisitors
+      },
+      onlineUsersList: presence.onlineUsers,
       recentEvents,
       recentLogs
     });
@@ -67,6 +76,7 @@ router.get('/overview', (req, res) => {
     return res.status(500).json({ error: 'Failed to retrieve administrative statistics.' });
   }
 });
+
 
 // GET /api/admin/events - list all events with filtering
 router.get('/events', (req, res) => {
@@ -424,22 +434,93 @@ router.post('/upload', upload.single('poster'), (req, res) => {
   }
 });
 
-// GET /api/admin/users - User management (passwords never exposed)
+// GET /api/admin/users - User directory with live presence & search/filter
 router.get('/users', (req, res) => {
   try {
-    const users = db.prepare(`
-      SELECT p.id, p.full_name, p.email, p.phone_number, p.preferred_city, p.avatar_url, p.created_at, r.role
+    const { status, search } = req.query;
+    const now = Date.now();
+    const fiveMinAgo = new Date(now - 5 * 60 * 1000).toISOString();
+    const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+
+    const rawUsers = db.prepare(`
+      SELECT p.id, p.full_name, p.email, p.phone_number, p.preferred_city, p.avatar_url, p.created_at, p.last_seen_at, r.role
       FROM profiles p
       LEFT JOIN user_roles r ON p.id = r.user_id
-      ORDER BY p.created_at DESC
+      ORDER BY p.last_seen_at DESC, p.created_at DESC
     `).all();
 
-    return res.json({ users });
+    // Map presence status and human readable timestamps
+    let users = rawUsers.map((u) => {
+      const isOnline = u.last_seen_at ? u.last_seen_at >= fiveMinAgo : false;
+      const isActiveToday = u.last_seen_at ? u.last_seen_at >= oneDayAgo : false;
+
+      let lastActiveHuman = 'Never active';
+      let lastActiveSeconds = null;
+
+      if (u.last_seen_at) {
+        const lastSeenTime = new Date(u.last_seen_at).getTime();
+        lastActiveSeconds = Math.max(0, Math.floor((now - lastSeenTime) / 1000));
+
+        if (lastActiveSeconds < 60) {
+          lastActiveHuman = 'Just now';
+        } else if (lastActiveSeconds < 3600) {
+          lastActiveHuman = `${Math.floor(lastActiveSeconds / 60)} min ago`;
+        } else if (lastActiveSeconds < 86400) {
+          lastActiveHuman = `${Math.floor(lastActiveSeconds / 3600)} hr ago`;
+        } else {
+          const days = Math.floor(lastActiveSeconds / 86400);
+          lastActiveHuman = `${days} day${days > 1 ? 's' : ''} ago`;
+        }
+      }
+
+      return {
+        ...u,
+        is_online: isOnline,
+        is_active_today: isActiveToday,
+        last_active_human: lastActiveHuman,
+        last_active_seconds_ago: lastActiveSeconds
+      };
+    });
+
+    const totalCount = users.length;
+    const onlineCount = users.filter((u) => u.is_online).length;
+    const activeTodayCount = users.filter((u) => u.is_active_today).length;
+    const adminsCount = users.filter((u) => u.role === 'admin').length;
+
+    // Apply filtering if requested
+    if (status === 'online') {
+      users = users.filter((u) => u.is_online);
+    } else if (status === 'active_today') {
+      users = users.filter((u) => u.is_active_today);
+    } else if (status === 'admin') {
+      users = users.filter((u) => u.role === 'admin');
+    }
+
+    if (search && search.trim() !== '') {
+      const q = search.trim().toLowerCase();
+      users = users.filter(
+        (u) =>
+          (u.full_name && u.full_name.toLowerCase().includes(q)) ||
+          (u.email && u.email.toLowerCase().includes(q)) ||
+          (u.preferred_city && u.preferred_city.toLowerCase().includes(q))
+      );
+    }
+
+    return res.json({
+      users,
+      stats: {
+        total: totalCount,
+        onlineCount,
+        activeTodayCount,
+        adminsCount
+      }
+    });
   } catch (err) {
     console.error('Admin users error:', err);
     return res.status(500).json({ error: 'Failed to retrieve registered users.' });
   }
 });
+
 
 // GET /api/admin/audit-logs - View audit logs
 router.get('/audit-logs', (req, res) => {

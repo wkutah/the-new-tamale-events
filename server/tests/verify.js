@@ -251,12 +251,40 @@ async function runTests() {
     'Test 17: Trending algorithm calculates buzz scores from attendee comments and ratings and ranks top talked-about events'
   );
 
+  // Test 18: Real-Time Presence Engine & Heartbeat Processing
+  const presence = require('../utils/presence');
+  presence.touchUser(userId, '/admin');
+  presence.touchVisitor('guest-session-123');
+  const presenceOverview = presence.getPresenceOverview();
+  const dbUserAfterTouch = db.prepare('SELECT last_seen_at FROM profiles WHERE id = ?').get(userId);
+  assert(
+    presenceOverview.onlineUsers.some((u) => u.id === userId) &&
+    presenceOverview.onlineRegisteredCount >= 1 &&
+    dbUserAfterTouch && dbUserAfterTouch.last_seen_at !== null,
+    'Test 18: Real-time presence engine tracks active user session, guest visitors, and persists last_seen_at'
+  );
+
+  // Test 19: Admin Stats & Registered Users Presence Enrichment
+  const adminStats = queries.getAdminStats();
+  const allUsersEnriched = db.prepare(`
+    SELECT p.id, p.full_name, p.email, p.last_seen_at, r.role
+    FROM profiles p
+    LEFT JOIN user_roles r ON p.id = r.user_id
+  `).all();
+  assert(
+    adminStats.totalUsers >= 2 &&
+    adminStats.onlineUsers >= 1 &&
+    typeof adminStats.activeTodayUsers === 'number' &&
+    allUsersEnriched.length >= 2,
+    'Test 19: Admin dashboard calculates total registered users and live online presence counts'
+  );
+
   console.log('\n========================================================');
   console.log(`  Tests Completed: ${passed} Passed, ${failed} Failed`);
   console.log('========================================================');
 
   if (failed === 0) {
-    console.log('  >>> ALL ARCHITECTURAL & SOCIAL TESTS PASSED SUCCESSFULLY! <<<\n');
+    console.log('  >>> ALL ARCHITECTURAL, SOCIAL & PRESENCE TESTS PASSED SUCCESSFULLY! <<<\n');
     process.exit(0);
   } else {
     process.exit(1);

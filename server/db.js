@@ -24,10 +24,19 @@ function initializeDatabase() {
       phone_number TEXT,
       preferred_city TEXT DEFAULT 'Tamale',
       avatar_url TEXT,
+      last_seen_at TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
   `);
+
+  // Ensure last_seen_at column exists for existing tables
+  try {
+    db.exec('ALTER TABLE profiles ADD COLUMN last_seen_at TEXT');
+  } catch (e) {
+    // Column already exists
+  }
+
 
   // 2. User Authentication Table
   db.exec(`
@@ -413,6 +422,12 @@ const queries = {
     const past = db.prepare("SELECT COUNT(*) as count FROM events WHERE status = 'published' AND event_date < date('now')").get().count;
     const totalUsers = db.prepare('SELECT COUNT(*) as count FROM profiles').get().count;
 
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const onlineUsers = db.prepare('SELECT COUNT(*) as count FROM profiles WHERE last_seen_at >= ?').get(fiveMinAgo).count;
+
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const activeTodayUsers = db.prepare('SELECT COUNT(*) as count FROM profiles WHERE last_seen_at >= ?').get(oneDayAgo).count;
+
     const cityBreakdown = db.prepare(`
       SELECT city, COUNT(*) as count
       FROM events
@@ -429,10 +444,13 @@ const queries = {
       upcoming,
       past,
       totalUsers,
+      onlineUsers,
+      activeTodayUsers,
       cityBreakdown
     };
   }
 };
+
 
 module.exports = {
   db,

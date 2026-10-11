@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken');
 const { queries } = require('../db');
+const { touchUser } = require('../utils/presence');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'new-tamale-events-secure-jwt-key-2025-savannah-secret';
+
 
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -19,6 +21,9 @@ function requireAuth(req, res, next) {
     }
 
     req.user = user;
+    try {
+      touchUser(user.id, req.path);
+    } catch (e) {}
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid or expired session token.' });
@@ -35,6 +40,9 @@ function optionalAuth(req, res, next) {
       const user = queries.findUserById.get(decoded.userId);
       if (user) {
         req.user = user;
+        try {
+          touchUser(user.id, req.path);
+        } catch (e) {}
       }
     } catch (e) {
       // ignore optional auth errors
@@ -42,6 +50,7 @@ function optionalAuth(req, res, next) {
   }
   next();
 }
+
 
 function requireAdmin(req, res, next) {
   requireAuth(req, res, () => {

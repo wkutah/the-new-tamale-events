@@ -87,6 +87,11 @@ export interface UserProfile {
   avatar_url?: string;
   role: 'user' | 'admin';
   created_at: string;
+  last_seen_at?: string;
+  is_online?: boolean;
+  is_active_today?: boolean;
+  last_active_human?: string;
+  last_active_seconds_ago?: number;
 }
 
 export interface UserActivity {
@@ -111,8 +116,12 @@ export interface AdminStats {
   upcoming: number;
   past: number;
   totalUsers: number;
+  onlineUsers?: number;
+  activeTodayUsers?: number;
+  activeVisitors?: number;
   cityBreakdown: { city: City; count: number }[];
 }
+
 
 export interface AdminAuditLog {
   id: string;
